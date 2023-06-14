@@ -1,15 +1,16 @@
 pipeline {
-  agent {
-    docker {
-      image 'maven:3.6.1-jdk-8-slim'
-      args '-v $HOME/.m2:/root/.m2'
-    }
-  }
+  agent none
 
   stages {
     stage("build") {
       when {
         changeset "**/worker/**"
+      }
+      agent {
+        docker {
+          image 'maven:3.6.1-jdk-8-slim'
+          args '-v $HOME/.m2:/root/.m2'
+        }
       }
       steps {
         echo 'Compiling worker app'
@@ -22,6 +23,12 @@ pipeline {
       when {
         changeset "**/worker/**"
       }
+      agent {
+        docker {
+          image 'maven:3.6.1-jdk-8-slim'
+          args '-v $HOME/.m2:/root/.m2'
+        }
+      }
       steps {
         echo 'Running Unit Tests on worker app'
         dir('worker') {
@@ -33,6 +40,12 @@ pipeline {
       when {
         branch 'master'
         changeset "**/worker/**"
+      }
+      agent {
+        docker {
+          image 'maven:3.6.1-jdk-8-slim'
+          args '-v $HOME/.m2:/root/.m2'
+        }
       }
       steps {
         echo 'Packaging worker app'
@@ -48,8 +61,9 @@ pipeline {
         echo 'Packaging worker app with docker'
         script {
           docker.withRegistry('https://index.docker.io/v1', 'dockerlogin') {
-            def workerImage = docker.build("rttolentino/worker:v$ {env.BUILD_ID}", "./worker")
+            def workerImage = docker.build("rttolentino/worker:v${env.BUILD_ID}", "./worker")
             workerImage.push()
+            workerImage.push("${env.BRANCH_NAME}")
             workerImage.push("latest")
           }
         }
@@ -59,7 +73,7 @@ pipeline {
 
   post {
     always {
-      echo 'Building multibranch pipeline for worker has completed...'
+      echo 'Building multibranch pipeline for worker has completed.'
     }
   }
 }
