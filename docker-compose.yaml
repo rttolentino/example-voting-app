@@ -1,0 +1,50 @@
+volumes:
+  db-data:
+
+networks:
+  instavote:
+    driver: bridge
+
+services:
+  vote:
+    image: rttolentino/vote:latest
+    build: ./vote
+    ports:
+      - 5010:80
+    depends_on:
+      - redis
+    networks:
+      - instavote
+
+  redis:
+    image: redis:alpine
+    networks:
+      - instavote
+
+  db:
+    image: postgres:9.4
+    volumes:
+      - "db-data:/var/lib/postgresql/data"
+    networks:
+      - instavote
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+
+  result:
+    image: rttolentino/result:latest
+    build: ./result
+    ports:
+      - 5011:4000
+    depends_on:
+      - db
+    networks:
+      - instavote
+
+  worker:
+    image: rttolentino/worker:latest
+    build: ./worker
+    depends_on:
+      - redis
+      - db
+    networks:
+      - instavote
