@@ -161,6 +161,19 @@ pipeline {
         }
       }
     }
+    stage('vote integration') {
+      when {
+        changeset "**/vote/**"
+        branch 'master'
+      }
+      agent any
+      steps {
+        echo 'Running Integration Tests on vote app'
+        dir('vote') {
+          sh 'sh integration_test.sh'
+        }
+      }
+    }
     stage('vote-integration') {
       when {
         changeset "**/vote/**"
@@ -192,7 +205,6 @@ pipeline {
         }
       }
     }
-
     stage('Sonarqube') {
       when {
         branch 'master'
@@ -208,7 +220,6 @@ pipeline {
         }
       }
     }
-
     stage('Quality Gate') {
       steps {
         waitForQualityGate abortPipeline: true
